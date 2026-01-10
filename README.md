@@ -4,16 +4,28 @@ Lightweight CLI for receiving heartbeats from editor extensions and syncing them
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
+```bash
+brew tap tracktime-sh/tap
+brew install tracktime
+```
+
+### Install Script
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tracktime-sh/cli/main/install.sh | bash
+```
+
 ### From Source
 
 ```bash
-cd cli
 go build -o tracktime ./cmd/tracktime
 ```
 
 ### Pre-built Binaries
 
-Download from releases for your platform:
+Download from [releases](https://github.com/tracktime-sh/cli/releases) for your platform:
 - `tracktime-darwin-amd64` (macOS Intel)
 - `tracktime-darwin-arm64` (macOS Apple Silicon)
 - `tracktime-linux-amd64`
