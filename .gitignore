@@ -1,0 +1,11 @@
+# Binaries
+/tracktime
+/tracktime.exe
+/dist/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
