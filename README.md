@@ -157,6 +157,83 @@ tracktime flush
 - `2` - Not configured
 - `3` - Network error
 
+### config
+
+Manage tracktime configuration.
+
+```bash
+# List all settings
+tracktime config list
+
+# Get a specific setting
+tracktime config get offline_mode
+
+# Set a value
+tracktime config set offline_mode true
+tracktime config set flush_interval 300
+```
+
+**Available settings:**
+- `offline_mode` - When `true`, data stays local and never syncs (default: `false`)
+- `flush_interval` - Seconds between automatic syncs (default: `300`)
+
+### stats
+
+Show local time tracking statistics from your queue.
+
+```bash
+# Last 7 days (default)
+tracktime stats
+
+# Last 30 days
+tracktime stats --days 30
+
+# JSON output
+tracktime stats --json
+```
+
+```
+Last 7 days:
+
+Total time:   12h 34m
+Heartbeats:   374
+
+By day:
+  2025-01-11: 3h 42m
+  2025-01-10: 4h 15m
+  ...
+
+By project:
+  tracktime-cli: 6h 20m
+  tracktime-web: 4h 10m
+
+By language:
+  Go: 7h 15m
+  TypeScript: 5h 19m
+```
+
+## Offline Mode
+
+Keep your data entirely local without syncing to the server:
+
+```bash
+# Enable offline mode
+tracktime config set offline_mode true
+
+# Check your local stats
+tracktime stats
+
+# Disable when you want to sync again
+tracktime config set offline_mode false
+tracktime flush
+```
+
+In offline mode:
+- Heartbeats are stored locally in SQLite
+- No network requests are made
+- Use `tracktime stats` to view your data
+- No account required
+
 ## Editor Extension Integration
 
 Extensions should call the CLI via subprocess. The `status` and `whoami` commands support a `--json` flag for structured output:
