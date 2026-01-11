@@ -114,8 +114,8 @@ func runHeartbeat(cmd *cobra.Command, args []string) error {
 		Synced:    false,
 	}
 
-	// Attempt opportunistic flush if configured and due
-	if cfg.IsConfigured() && cfg.ShouldFlush() {
+	// Attempt opportunistic flush if configured, sync enabled, and due
+	if cfg.IsConfigured() && cfg.SyncEnabled() && cfg.ShouldFlush() {
 		syncedCount, err := doFlush(cfg, q)
 		if err == nil && syncedCount > 0 {
 			result.Synced = true

@@ -31,6 +31,7 @@ type StatusOutput struct {
 	QueueSize   int     `json:"queue_size"`
 	LastSync    *string `json:"last_sync,omitempty"`
 	LastSyncRaw *string `json:"last_sync_raw,omitempty"`
+	OfflineMode bool    `json:"offline_mode"`
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
@@ -64,9 +65,10 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	if statusJSONOutput {
 		output := StatusOutput{
-			Configured: configured,
-			APIURL:     config.APIURL,
-			QueueSize:  queueSize,
+			Configured:  configured,
+			APIURL:      config.APIURL,
+			QueueSize:   queueSize,
+			OfflineMode: cfg.OfflineMode,
 		}
 
 		if cfg.MachineID != "" {
@@ -109,13 +111,15 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Queue size: %d heartbeats\n", queueSize)
 	}
 
-	if !cfg.LastFlushAt.IsZero() {
+	if cfg.OfflineMode {
+		fmt.Printf("Mode:       offline (data stays local)\n")
+	} else if !cfg.LastFlushAt.IsZero() {
 		fmt.Printf("Last sync:  %s\n", formatTimeAgo(cfg.LastFlushAt))
 	} else {
 		fmt.Printf("Last sync:  never\n")
 	}
 
-	if !configured {
+	if !configured && !cfg.OfflineMode {
 		fmt.Println("\nTo configure, run: tracktime login")
 		os.Exit(ExitNotConfigured)
 	}

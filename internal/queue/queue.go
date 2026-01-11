@@ -2,6 +2,7 @@ package queue
 
 import (
 	"database/sql"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -199,4 +200,128 @@ func nullStringToString(ns sql.NullString) string {
 		return ns.String
 	}
 	return ""
+}
+
+type DayStats struct {
+	Date     string `json:"date"`
+	Duration string `json:"duration"`
+	Minutes  int    `json:"minutes"`
+}
+
+type Stats struct {
+	TotalMinutes int            `json:"total_minutes"`
+	TotalTime    string         `json:"total_time"`
+	Days         []DayStats     `json:"days"`
+	ByProject    map[string]int `json:"by_project"`
+	ByLanguage   map[string]int `json:"by_language"`
+	ByEditor     map[string]int `json:"by_editor"`
+	Heartbeats   int            `json:"heartbeats"`
+}
+
+func (q *Queue) GetStats(since time.Time) (*Stats, error) {
+	stats := &Stats{
+		Days:       []DayStats{},
+		ByProject:  make(map[string]int),
+		ByLanguage: make(map[string]int),
+		ByEditor:   make(map[string]int),
+	}
+
+	rows, err := q.db.Query(`
+		SELECT timestamp, project, language, editor
+		FROM heartbeats
+		WHERE timestamp >= ?
+		ORDER BY timestamp ASC
+	`, since.Format(time.RFC3339))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var heartbeats []struct {
+		timestamp time.Time
+		project   string
+		language  string
+		editor    string
+	}
+
+	for rows.Next() {
+		var ts string
+		var project, language, editor sql.NullString
+
+		if err := rows.Scan(&ts, &project, &language, &editor); err != nil {
+			return nil, err
+		}
+
+		timestamp, err := time.Parse(time.RFC3339Nano, ts)
+		if err != nil {
+			timestamp, _ = time.Parse(time.RFC3339, ts)
+		}
+
+		heartbeats = append(heartbeats, struct {
+			timestamp time.Time
+			project   string
+			language  string
+			editor    string
+		}{
+			timestamp: timestamp,
+			project:   nullStringToString(project),
+			language:  nullStringToString(language),
+			editor:    editor.String,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	stats.Heartbeats = len(heartbeats)
+
+	if len(heartbeats) == 0 {
+		stats.TotalTime = "0m"
+		return stats, nil
+	}
+
+	dayMinutes := make(map[string]int)
+	heartbeatInterval := 2 // Assume each heartbeat represents ~2 minutes of activity
+
+	for _, hb := range heartbeats {
+		day := hb.timestamp.Format("2006-01-02")
+		dayMinutes[day] += heartbeatInterval
+
+		if hb.project != "" {
+			stats.ByProject[hb.project] += heartbeatInterval
+		}
+		if hb.language != "" {
+			stats.ByLanguage[hb.language] += heartbeatInterval
+		}
+		if hb.editor != "" {
+			stats.ByEditor[hb.editor] += heartbeatInterval
+		}
+
+		stats.TotalMinutes += heartbeatInterval
+	}
+
+	for day, minutes := range dayMinutes {
+		stats.Days = append(stats.Days, DayStats{
+			Date:     day,
+			Minutes:  minutes,
+			Duration: formatMinutes(minutes),
+		})
+	}
+
+	stats.TotalTime = formatMinutes(stats.TotalMinutes)
+
+	return stats, nil
+}
+
+func formatMinutes(minutes int) string {
+	if minutes < 60 {
+		return fmt.Sprintf("%dm", minutes)
+	}
+	hours := minutes / 60
+	mins := minutes % 60
+	if mins == 0 {
+		return fmt.Sprintf("%dh", hours)
+	}
+	return fmt.Sprintf("%dh %dm", hours, mins)
 }

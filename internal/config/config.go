@@ -25,6 +25,7 @@ type Config struct {
 	MachineID            string    `json:"machine_id"`
 	FlushIntervalSeconds int       `json:"flush_interval_seconds"`
 	LastFlushAt          time.Time `json:"last_flush_at"`
+	OfflineMode          bool      `json:"offline_mode"`
 }
 
 func DefaultConfig() *Config {
@@ -133,4 +134,8 @@ func (c *Config) UpdateLastFlush() {
 
 func (c *Config) ClearAuth() {
 	c.APIKey = ""
+}
+
+func (c *Config) SyncEnabled() bool {
+	return !c.OfflineMode
 }

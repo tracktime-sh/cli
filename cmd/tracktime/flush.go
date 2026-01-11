@@ -45,6 +45,11 @@ func runFlush(cmd *cobra.Command, args []string) error {
 		os.Exit(FlushExitNotConfig)
 	}
 
+	if !cfg.SyncEnabled() {
+		outputFlushResult(FlushResult{Error: "offline mode enabled: run 'tracktime config set offline_mode false' to enable sync"})
+		os.Exit(FlushExitNotConfig)
+	}
+
 	q, err := queue.Open()
 	if err != nil {
 		outputFlushResult(FlushResult{Error: "failed to open queue"})

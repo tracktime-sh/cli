@@ -22,6 +22,8 @@ func main() {
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(whoamiCmd)
+	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(statsCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
